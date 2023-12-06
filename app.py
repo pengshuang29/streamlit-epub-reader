@@ -49,53 +49,51 @@ if 'page' not in st.session_state: st.session_state['page'] = "Home"
 if 'book_file' not in st.session_state: st.session_state['book_file'] = None
 if 'chapter_idx' not in st.session_state: st.session_state['chapter_idx'] = 0
 
-if __name__ == "__main__":
-
-    if st.session_state['page'] == "Home":
-        # Home page
-        st.title("Epub Reader")
-        book_file = st.file_uploader("Upload your book", type=["epub"])
-        if book_file is not None:
-            if os.path.exists("tmp.epub"):
-                os.remove("tmp.epub")
-            bytes_data = book_file.read()
-            
-            tmp = NamedTemporaryFile(delete=False, suffix='.epub')
-            tmp.write(bytes_data) 
-            book = epub.read_epub(tmp.name)
-            epub.write_epub('tmp.epub', book)
-            tmp.close()
-            os.unlink(tmp.name)
-
-            st.session_state['page'] = "Book"
-            st.session_state['chapter_idx'] = 0
-            st.rerun()
-
-    elif st.session_state['page'] == "Book":
-        # Book page
+if st.session_state['page'] == "Home":
+    # Home page
+    st.title("Epub Reader")
+    book_file = st.file_uploader("Upload your book", type=["epub"])
+    if book_file is not None:
         if os.path.exists("tmp.epub"):
-            book = epub.read_epub('tmp.epub')
-        else:
-            st.session_state['page'] = "Home"
-            st.session_state['book_file'] = None
-            st.session_state['chapter_idx'] = 0
-            st.rerun()
+            os.remove("tmp.epub")
+        bytes_data = book_file.read()
+        
+        tmp = NamedTemporaryFile(delete=False, suffix='.epub')
+        tmp.write(bytes_data) 
+        book = epub.read_epub(tmp.name)
+        epub.write_epub('tmp.epub', book)
+        tmp.close()
+        os.unlink(tmp.name)
 
-        book_toc = book.toc
-        book_docs = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        st.session_state['page'] = "Book"
+        st.session_state['chapter_idx'] = 0
+        st.rerun()
 
-        st.title(book.title)
+elif st.session_state['page'] == "Book":
+    # Book page
+    if os.path.exists("tmp.epub"):
+        book = epub.read_epub('tmp.epub')
+    else:
+        st.session_state['page'] = "Home"
+        st.session_state['book_file'] = None
+        st.session_state['chapter_idx'] = 0
+        st.rerun()
 
-        # Sidebar
-        close = st.sidebar.button("Close Book")
-        if close:
-            close_book()
-            st.rerun()
-        st.sidebar.title("Table of Content")
-        for idx, item in enumerate(book_toc):
-            st.sidebar.button(item.title, on_click=lambda idx=idx: set_current_chapter(idx))
+    book_toc = book.toc
+    book_docs = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
 
-        # Chapter content
-        with st.spinner("waiting"):
-            chapter_content = get_chapter_content(st.session_state['chapter_idx'])
-        st.markdown(chapter_content, unsafe_allow_html=True)
+    st.title(book.title)
+
+    # Sidebar
+    close = st.sidebar.button("Close Book")
+    if close:
+        close_book()
+        st.rerun()
+    st.sidebar.title("Table of Content")
+    for idx, item in enumerate(book_toc):
+        st.sidebar.button(item.title, on_click=lambda idx=idx: set_current_chapter(idx))
+
+    # Chapter content
+    with st.spinner("waiting"):
+        chapter_content = get_chapter_content(st.session_state['chapter_idx'])
+    st.markdown(chapter_content, unsafe_allow_html=True)
